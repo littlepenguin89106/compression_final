@@ -1,0 +1,1 @@
+python3 train.py --model_type compression --regime med --n_steps 1e5
