@@ -19,3 +19,12 @@ python3 train.py --model_type compression --regime low --n_steps 1e6
 # Train using full generator-discriminator loss
 python3 train.py --model_type compression_gan --regime low --n_steps 1e6 --warmstart -ckpt path/to/base/checkpoint
 ```
+
+### Compression
+
+* `compress.py` will compress generic images using some specified model. This performs a forward pass through the model to yield the quantized latent representation, which is losslessly compressed using a vectorized ANS entropy coder and saved to disk in binary format. As the model architecture is fully convolutional, this will work with images of arbitrary size/resolution (subject to memory constraints).
+
+```bash
+python3 compress.py -i path/to/image/dir -ckpt path/to/trained/model --reconstruct
+```
+The compressed format can be transmitted and decoded using the routines in `compress.py`. The [Colab demo](https://colab.research.google.com/github/Justin-Tan/high-fidelity-generative-compression/blob/master/assets/HiFIC_torch_colab_demo.ipynb) illustrates the decoding process.
