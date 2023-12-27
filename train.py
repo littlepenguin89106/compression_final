@@ -61,7 +61,7 @@ def optimize_compression_loss(compression_loss, amortization_opt, hyperlatent_li
 def test(args, model, epoch, idx, data, test_data, test_bpp, device, epoch_test_loss, storage, best_test_loss, 
          start_time, epoch_start_time, logger, train_writer, test_writer):
 
-    model.eval()  
+    model.eval()
     with torch.no_grad():
         data = data.to(device, dtype=torch.float)
 
@@ -120,7 +120,7 @@ def train(args, model, train_loader, test_loader, device, logger, optimizers):
                     # Train D for D_steps, then G, using distinct batches
                     losses = model(data, train_generator=train_generator)
                     compression_loss = losses['compression']
-                    disc_loss = losses['disc']
+                    disc_loss = losses['disc']      
 
                     if train_generator is True:
                         optimize_compression_loss(compression_loss, amortization_opt, hyperlatent_likelihood_opt)

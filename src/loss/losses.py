@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import torch.autograd as autograd
 
 from src.helpers.utils import get_scheduled_params
 
@@ -49,18 +50,69 @@ def _least_squares_loss(D_real, D_gen, D_real_logits=None, D_gen_logits=None):
     
     return D_loss, G_loss
 
-def gan_loss(gan_loss_type, disc_out, mode='generator_loss'):
+def wgan_gp_loss(disc_out,intermediates, D, l_gp=10):
+    def compute_gradient_penalty(D, real_samples, gen_samples, latents):
+        alpha = torch.rand((real_samples.size(0), 1, 1, 1),device=real_samples.device)
+        interpolates = (alpha * real_samples + ((1 - alpha) * gen_samples)).requires_grad_(True)
+        d_interpolates = D(interpolates, latents)[0]
+        gen = torch.ones(d_interpolates.shape[0], 1, requires_grad=False, device=real_samples.device)
 
-    if gan_loss_type == 'non_saturating':
-        loss_fn = _non_saturating_loss
-    elif gan_loss_type == 'least_squares':
-        loss_fn = _least_squares_loss
-    else:
-        raise ValueError('Invalid GAN loss')
+        gradients = autograd.grad(
+            outputs=d_interpolates,
+            inputs=interpolates,
+            grad_outputs=gen,
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True,
+        )[0]
 
-    D_loss, G_loss = loss_fn(D_real=disc_out.D_real, D_gen=disc_out.D_gen,
-        D_real_logits=disc_out.D_real_logits, D_gen_logits=disc_out.D_gen_logits)
-        
-    loss = G_loss if mode == 'generator_loss' else D_loss
+        gradients = gradients.view(gradients.size(0), -1)
+        gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+        return gradient_penalty
+
+    D_real = disc_out.D_real
+    D_gen = disc_out.D_gen
+    real_imgs = intermediates.input_image.detach()
+    gen_imgs = intermediates.reconstruction.detach()
+    latents = intermediates.latents_quantized.detach()
     
-    return loss
+    with torch.enable_grad():
+        gradient_penalty = compute_gradient_penalty(D, real_imgs, gen_imgs, latents)
+    D_loss = -torch.mean(D_real) + torch.mean(D_gen) + l_gp * gradient_penalty
+    G_loss = -torch.mean(D_gen)
+
+    return D_loss, G_loss
+
+def wgan_div_loss(disc_out,intermediates, D, p=6,k=2):
+    def compute_gradient_penalty(D,real_imgs,fake_imgs,latents):
+        real_imgs = real_imgs.clone().detach().requires_grad_(True)
+        fake_imgs = fake_imgs.clone().detach().requires_grad_(True)
+        D_real = D(real_imgs,latents)[0]
+        D_gen = D(fake_imgs,latents)[0]
+
+        real_grad_out = torch.ones(D_real.size(0), 1, requires_grad=False, device=D_real.device)
+        fake_grad_out = torch.ones(D_gen.size(0), 1, requires_grad=False, device=D_gen.device)
+        with torch.enable_grad():
+            real_grad = autograd.grad(
+                D_real, real_imgs, real_grad_out, create_graph=True, retain_graph=True, only_inputs=True
+            )[0]
+            fake_grad = autograd.grad(
+                D_gen, fake_imgs, fake_grad_out, create_graph=True, retain_graph=True, only_inputs=True
+            )[0]
+        real_grad_norm = real_grad.view(real_grad.size(0), -1).pow(2).sum(1) ** (p / 2)
+        fake_grad_norm = fake_grad.view(fake_grad.size(0), -1).pow(2).sum(1) ** (p / 2)
+        div_gp = torch.mean(real_grad_norm + fake_grad_norm) * k / 2
+        return div_gp
+
+    D_real = disc_out.D_real
+    D_gen = disc_out.D_gen
+    real_imgs = intermediates.input_image
+    fake_imgs = intermediates.reconstruction.detach()
+    latents = intermediates.latents_quantized.detach()
+
+    with torch.enable_grad():
+        div_gp = compute_gradient_penalty(D,real_imgs,fake_imgs,latents)
+    D_loss = -torch.mean(D_real) + torch.mean(D_gen) + div_gp
+    G_loss = -torch.mean(D_gen)
+
+    return D_loss, G_loss

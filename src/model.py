@@ -95,7 +95,6 @@ class Model(nn.Module):
                 self.discriminator_steps))
             self.Discriminator = discriminator.Discriminator(image_dims=self.image_dims,
                 context_dims=self.args.latent_dims, C=self.args.latent_channels)
-            self.gan_loss = partial(losses.gan_loss, args.gan_loss_type)
         else:
             self.discriminator_steps = 0
             self.Discriminator = None
@@ -246,8 +245,12 @@ class Model(nn.Module):
         train_generator: Flag to send gradients to generator
         """
         disc_out = self.discriminator_forward(intermediates, train_generator)
-        D_loss = self.gan_loss(disc_out, mode='discriminator_loss')
-        G_loss = self.gan_loss(disc_out, mode='generator_loss')
+        if self.args.gan_loss_type == 'wgan_gp':
+            D_loss, G_loss = losses.wgan_gp_loss(disc_out, intermediates,self.Discriminator)
+        elif self.args.gan_loss_type == 'wgan_div':
+            D_loss, G_loss = losses.wgan_div_loss(disc_out,intermediates,self.Discriminator)
+        else:
+            raise ValueError()
 
         # Bookkeeping 
         if (self.step_counter % self.log_interval == 1):

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 
 class Discriminator(nn.Module):
-    def __init__(self, image_dims, context_dims, C, spectral_norm=True):
+    def __init__(self, image_dims, context_dims, C):
         """ 
         Convolutional patchGAN discriminator used in [1].
         Accepts as input generator output G(z) or x ~ p*(x) where
@@ -42,24 +42,19 @@ class Discriminator(nn.Module):
         # TODO: calculate padding properly
         cnn_kwargs = dict(stride=2, padding=1, padding_mode='reflect')
         self.activation = nn.LeakyReLU(negative_slope=0.2)
-        
-        if spectral_norm is True:
-            norm = nn.utils.spectral_norm
-        else:
-            norm = nn.utils.weight_norm
 
         # (C_in + C_in', 256,256) -> (64,128,128), with implicit padding
         # TODO: Check if removing spectral norm in first layer works
-        self.conv1 = norm(nn.Conv2d(im_channels + context_C_out, filters[0], kernel_dim, **cnn_kwargs))
+        self.conv1 = nn.Conv2d(im_channels + context_C_out, filters[0], kernel_dim, **cnn_kwargs)
 
         # (128,128) -> (64,64)
-        self.conv2 = norm(nn.Conv2d(filters[0], filters[1], kernel_dim, **cnn_kwargs))
+        self.conv2 = nn.Conv2d(filters[0], filters[1], kernel_dim, **cnn_kwargs)
 
         # (64,64) -> (32,32)
-        self.conv3 = norm(nn.Conv2d(filters[1], filters[2], kernel_dim, **cnn_kwargs))
+        self.conv3 = nn.Conv2d(filters[1], filters[2], kernel_dim, **cnn_kwargs)
 
         # (32,32) -> (16,16)
-        self.conv4 = norm(nn.Conv2d(filters[2], filters[3], kernel_dim, **cnn_kwargs))
+        self.conv4 = nn.Conv2d(filters[2], filters[3], kernel_dim, **cnn_kwargs)
 
         self.conv_out = nn.Conv2d(filters[3], 1, kernel_size=1, stride=1)
 

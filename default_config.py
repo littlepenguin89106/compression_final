@@ -39,7 +39,7 @@ class args(object):
     silent = True
     n_epochs = 8
     n_steps = 1e6
-    batch_size = 8
+    batch_size = 4
     log_interval = 1000
     save_interval = 50000
     gpu = 0
@@ -109,6 +109,6 @@ class hific_args(args):
     loss terms.
     """
     model_type = ModelTypes.COMPRESSION_GAN
-    gan_loss_type = 'non_saturating'  # ('non_saturating', 'least_squares')
+    gan_loss_type = 'wgan_div'  # ('non_saturating', 'least_squares')
     discriminator_steps = 1
     sample_noise = False
