@@ -48,6 +48,19 @@ def _least_squares_loss(D_real, D_gen, D_real_logits=None, D_gen_logits=None):
     G_loss = 0.5 * torch.mean(torch.square(D_gen - 1.0))
     
     return D_loss, G_loss
+# Hinge Loss
+def _loss_hinge_dis(D_gen, D_real,D_real_logits=None, D_gen_logits=None):
+  D_loss = torch.mean(F.relu(1. - D_real_logits))
+  G_loss = torch.mean(F.relu(1. + D_gen_logits))
+  D_loss += G_loss
+  G_loss = -torch.mean(D_gen_logits)
+
+  return D_loss, G_loss
+# def loss_hinge_dis(dis_fake, dis_real): # This version returns a single loss
+  # loss = torch.mean(F.relu(1. - dis_real))
+  # loss += torch.mean(F.relu(1. + dis_fake))
+  # return loss
+
 
 def gan_loss(gan_loss_type, disc_out, mode='generator_loss'):
 
@@ -55,12 +68,14 @@ def gan_loss(gan_loss_type, disc_out, mode='generator_loss'):
         loss_fn = _non_saturating_loss
     elif gan_loss_type == 'least_squares':
         loss_fn = _least_squares_loss
+    elif gan_loss_type == 'hingle_loss':
+        loss_fn = _loss_hinge_dis
     else:
         raise ValueError('Invalid GAN loss')
 
+
     D_loss, G_loss = loss_fn(D_real=disc_out.D_real, D_gen=disc_out.D_gen,
         D_real_logits=disc_out.D_real_logits, D_gen_logits=disc_out.D_gen_logits)
-        
     loss = G_loss if mode == 'generator_loss' else D_loss
     
     return loss

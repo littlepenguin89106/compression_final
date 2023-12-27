@@ -28,7 +28,7 @@ class Swish(nn.Module):
 
 def get_device(is_gpu=True):
     """Return the correct device"""
-    return torch.device("cuda" if torch.cuda.is_available() and is_gpu
+    return torch.device("cuda:1" if torch.cuda.is_available() and is_gpu
                         else "cpu")
 
 def get_model_device(model):

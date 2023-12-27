@@ -24,7 +24,7 @@ class Datasets(object):
 
 class DatasetPaths(object):
     OPENIMAGES = 'data/openimages'
-    COCO = 'data/coco/images'
+    COCO = '/project/coco/images'
     CITYSCAPES = ''
     JETS = ''
 
@@ -109,6 +109,6 @@ class hific_args(args):
     loss terms.
     """
     model_type = ModelTypes.COMPRESSION_GAN
-    gan_loss_type = 'non_saturating'  # ('non_saturating', 'least_squares')
+    gan_loss_type = 'hingle_loss'  # ('hingle_loss','non_saturating', 'least_squares')
     discriminator_steps = 1
     sample_noise = False
