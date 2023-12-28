@@ -1,6 +1,25 @@
 # reproducible high-fidelity-generative-compression
 
-we slight modified the project so that it can run on new cuda verion.
+we slight modified the project so that it can run on newer cuda verion(11.7).
+
+## Usage
+*make sure to have cuda/11.7,and change the module:
+```bash
+module load cuda/11.7
+```
+* Install Pytorch nightly and dependencies from [https://pytorch.org/](https://pytorch.org/). Then install other requirements:
+
+```bash
+pip install -r requirements.txt
+```
+
+* Clone this repository, `cd` in:
+
+```bash
+git clone git@github.com:littlepenguin89106/compression_final.git
+cd high-fidelity-generative-compression
+```
+
 
 ### Training
 
