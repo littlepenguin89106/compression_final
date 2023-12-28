@@ -28,3 +28,7 @@ python3 train.py --model_type compression_gan --regime low --n_steps 1e6 --warms
 python3 compress.py -i path/to/image/dir -ckpt path/to/trained/model --reconstruct
 ```
 The compressed format can be transmitted and decoded using the routines in `compress.py`. The [Colab demo](https://colab.research.google.com/github/Justin-Tan/high-fidelity-generative-compression/blob/master/assets/HiFIC_torch_colab_demo.ipynb) illustrates the decoding process.
+
+### WGAN-GP, WGAN-div
+
+Checkout to `wgan` branch to use wgan implementation.
